@@ -1,0 +1,20 @@
+---
+- job:
+    name: example-docs
+    node: node-label
+
+    triggers:
+      - zuul
+
+    builders:
+      - git-prep
+      - docs
+
+    publishers:
+      - scp:
+          site: 'scp-server'
+          files:
+            - target: 'dir/ectory'
+              source: 'build/html/foo'
+              keep-hierarchy: true
+      - console-log
