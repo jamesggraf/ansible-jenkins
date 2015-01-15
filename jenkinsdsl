@@ -1,0 +1,29 @@
+job {
+    name "${RepoName}"
+    parameters {
+        choiceParam("DEPLOY_TYPE", ["none", "patch", "minor", "major"], "The type of deployment to perform.  If a deploy type other than 'none' is specified the cookbook will be deployed to S3 and the Chef Server.")
+        stringParam("DEPLOY_BUCKET", "sps-build-deploy")
+        stringParam("DEPLOY_ROOT", "ansible")
+    }
+    scm {
+        git {
+            remote {
+                url("https://github.com/SPSCommerce/${RepoName}.git")
+                branch("master")
+            }
+        }
+    }
+    triggers {
+        scm("H/5 * * * *")
+    }
+    wrappers {
+        rvm("2.1.2@${RepoName}")
+        preBuildCleanup()
+        credentialsBinding {
+            usernamePassword("AWS_KEYS", "ea4054b9-87f2-4c6a-8d3c-64a2e9a10358")
+        }
+    }
+    steps{
+        shell("set +x\nset -e\nexport AWS_ACCESS_KEY_ID='`echo $AWS_KEYS | cut -d: -f 1`'\nexport AWS_SECRET_ACCESS_KEY='`echo $AWS_KEYS | cut -d: -f 2`'\nset -x\nbundle\nansible-sdk role_artifact\nansible-sdk publish_artifact build/${RepoName}.tgz --fail-on-exist")
+    }
+}
